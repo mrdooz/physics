@@ -2,46 +2,28 @@
 
 #include <stdio.h>
 
-#include <GL/glew.h>
-
-#ifdef _WIN32
-#include <windows.h>
-#include <direct.h>
-#include <GL/GLU.h>
-#else
-#include <OpenGL/glu.h>
-#include <unistd.h>
-#endif
-
-
-#define SDL_MAIN_HANDLED
-#include <SDL.h>
-#include <SDL_opengl.h>
-
 #include "imgui.h"
 #include "imguiRenderGL.h"
 #include "file_utils.hpp"
 
-#ifdef _WIN32
-#pragma comment(lib, "opengl32.lib")
-#pragma comment(lib, "glu32.lib")
-#pragma comment(lib, "sdl2.lib")
-#pragma comment(lib, "glew32.lib")
-#endif
-
 #include "vector3.hpp"
+
+#pragma warning(disable: 4996)
 
 namespace physics
 {
-  SDL_Window* displayWindow;
-
   static int mouseX = 0, mouseY = 0, mouseButtons = 0;
-  static int g_width, height;
+  static int g_width, g_height;
+  unique_ptr<RenderWindow> g_renderWindow;
 
   GLuint g_vbo;
   GLuint g_shaderProgram, g_vertexShader, g_fragmentShader;
 
+#ifdef _WIN32
+  string g_base = "/projects/physics/";
+#else
   string g_base = "/Users/dooz/projects/physics/";
+#endif
 
   //---------------------------------------------------------------------------------
   GLuint loadShader(const char* filename, GLuint type)
@@ -121,11 +103,11 @@ namespace physics
   //---------------------------------------------------------------------------------
   static void PreRenderUi()
   {
-    imguiBeginFrame(mouseX, height - 1 - mouseY, mouseButtons, 0);
+    imguiBeginFrame(mouseX, g_height - 1 - mouseY, mouseButtons, 0);
 
     static const int paramSize = 200;
     static int paramScroll = 0;
-    imguiBeginScrollArea("Params", 0, height - paramSize, g_width, paramSize, &paramScroll);
+    imguiBeginScrollArea("Params", 0, g_height - paramSize, g_width, paramSize, &paramScroll);
 
     static float xPos = 0.0f;
     imguiSlider("xPos", &xPos, -1000, 1000.0f, 1);
@@ -154,7 +136,7 @@ namespace physics
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, g_width, 0, height, -1.0f, 1.0f);
+    glOrtho(0, g_width, 0, g_height, -1.0f, 1.0f);
 
     imguiRenderGLDraw();
 
@@ -168,7 +150,7 @@ namespace physics
     glClearDepth(1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    //PreRenderUi();
+    PreRenderUi();
 
     glLoadIdentity();
     //glMatrixMode(GL_PROJECTION);
@@ -188,10 +170,9 @@ namespace physics
 
     glUseProgram(0);
 
-    //PostRenderUi();
+    PostRenderUi();
 
-
-    SDL_GL_SwapWindow(displayWindow);
+    g_renderWindow->display();
   }
 }
 
@@ -199,16 +180,20 @@ namespace physics
 int main(int argc, char** argv)
 {
   using namespace physics;
-  g_width = 1024;
-  height = 768;
-  SDL_SetMainReady();
-  SDL_Init(SDL_INIT_VIDEO);
-  displayWindow = SDL_CreateWindow(
-    "SDL2/OpenGL Demo", 100, 100, g_width, height,
-    SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+#ifdef _WIN32
+  g_width = GetSystemMetrics(SM_CXFULLSCREEN);
+  g_height = GetSystemMetrics(SM_CYFULLSCREEN);
+#else
+  auto displayId = CGMainDisplayID();
+  g_width = CGDisplayPixelsWide(displayId);
+  g_height = CGDisplayPixelsHigh(displayId);
+#endif
 
-  SDL_GLContext glcontext = SDL_GL_CreateContext(displayWindow);
-  glViewport(0, 0, g_width, height);
+  sf::ContextSettings settings;
+  g_renderWindow.reset(new RenderWindow(sf::VideoMode(8 * g_width / 10, 8 * g_height / 10), "...", sf::Style::Default, settings));
+  g_renderWindow->setVerticalSyncEnabled(true);
+
+  glViewport(0, 0, g_width, g_height);
 
   GLuint res = glewInit();
   if (res != GLEW_OK)
@@ -219,9 +204,41 @@ int main(int argc, char** argv)
 
   imguiRenderGLInit((g_base + "gfx/04b_24_.ttf").c_str());
 
-  bool quit = false;
-  while (!quit)
+  bool done = false;
+  while (g_renderWindow->isOpen() && !done)
   {
+    Event event;
+    while (g_renderWindow->pollEvent(event))
+    {
+      switch (event.type)
+      {
+      case Event::KeyReleased:
+        if (event.key.code == sf::Keyboard::Escape)
+          done = true;
+        break;
+
+      case Event::MouseMoved:
+        mouseX = event.mouseMove.x;
+        mouseY = event.mouseMove.y;
+      break;
+
+      case Event::MouseButtonPressed:
+        if (event.mouseButton.button == sf::Mouse::Left)
+          mouseButtons |= 1;
+        else if (event.mouseButton.button == sf::Mouse::Right)
+          mouseButtons |= 2;
+      break;
+
+      case Event::MouseButtonReleased:
+      if (event.mouseButton.button == sf::Mouse::Left)
+        mouseButtons &= ~1;
+      else if (event.mouseButton.button == sf::Mouse::Right)
+        mouseButtons &= ~2;
+      break;
+      }
+    }
+
+/*
     SDL_Event event;
     while(SDL_PollEvent(&event))
     {
@@ -259,11 +276,11 @@ int main(int argc, char** argv)
         break;
       }
     }
+*/
     RenderFrame();
   }
 
-  SDL_GL_DeleteContext(glcontext);
-  SDL_Quit();
+  g_renderWindow.reset();
 
   return 0;
 }

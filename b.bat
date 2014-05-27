@@ -1,0 +1,1 @@
+cmake -G "Visual Studio 12" -DCMAKE_MODULE_PATH=d:/projects/SFML-2.1/cmake/Modules/ -DCMAKE_INCLUDE_PATH=D:\projects\protobuf-2.5.0;d:\projects\sfml-2.1\include;d:\projects\glew-1.10.0\include -DCMAKE_LIBRARY_PATH=d:\projects\sfml-2.1;d:\projects\glew-1.10.0\lib\release\win32

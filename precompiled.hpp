@@ -23,14 +23,23 @@
 #include <boost/date_time.hpp>
 #include <boost/intrusive_ptr.hpp>
 
+#include <GL/glew.h>
+
 #ifdef _WIN32
 #include <windows.h>
 #include <direct.h>
 #include <io.h>
+#include <GL/GLU.h>
 #else
+#include <OpenGL/glu.h>
 #include <unistd.h>
 #include <CoreGraphics/CGDirectDisplay.h>
 #endif
+
+
+#include <SFML/Graphics.hpp>
+#include <SFML/Window.hpp>
+#include <SFML/Network.hpp>
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -46,6 +55,24 @@ typedef int64_t s64;
 namespace physics
 {
   extern const float PI;
+
+  using sf::Color;
+  using sf::Font;
+  using sf::Text;
+  using sf::Image;
+  using sf::Texture;
+  using sf::Sprite;
+  using sf::CircleShape;
+  using sf::RectangleShape;
+  using sf::RenderTarget;
+  using sf::RenderWindow;
+  using sf::RenderTexture;
+  using sf::Keyboard;
+  using sf::Event;
+  using sf::View;
+  using sf::Time;
+  using sf::Clock;
+  using sf::VertexArray;
 
   using std::atomic;
   using std::condition_variable;

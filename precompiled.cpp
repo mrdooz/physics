@@ -1,6 +1,6 @@
 #include "precompiled.hpp"
 
-namespace pang
+namespace physics
 {
   const float PI = 3.1415926f;
 }

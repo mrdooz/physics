@@ -71,7 +71,6 @@ namespace physics
   //---------------------------------------------------------------------------------
   bool Init()
   {
-    glGenBuffers(1, &g_vbo);
 
     vector<Vector3> verts;
 
@@ -96,6 +95,7 @@ namespace physics
     glGenBuffers(1, &g_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, g_vbo);
     glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(Vector3), verts.data(), GL_STATIC_DRAW);
+    glEnableClientState(GL_VERTEX_ARRAY);
 
     return InitShaders();
   }
@@ -144,6 +144,16 @@ namespace physics
   }
 
   //---------------------------------------------------------------------------------
+  void Perspective(GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
+  {
+    // replacement for gluPerspective
+    GLdouble h = tan(fovy/2 * PI / 180) * zNear;
+    GLdouble w = aspect * h;
+    glFrustum(-w, w, -h, h, zNear, zFar);
+  }
+
+  //---------------------------------------------------------------------------------
+
   static void RenderFrame()
   {
     glClearColor(0 / 255.0f, 0x2b / 255.0f, 0x36 / 255.0f, 1.0f);
@@ -153,10 +163,10 @@ namespace physics
     PreRenderUi();
 
     glLoadIdentity();
-    //glMatrixMode(GL_PROJECTION);
-    //gluPerspective(45.0f,(GLfloat) g_width /(GLfloat)height,0.1f,1000.0f);
-//    glMatrixMode(GL_MODELVIEW);
-//    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    Perspective(45.0f,(GLfloat)g_width / (GLfloat)g_height, 1, 1000.0f);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
     // render stuff
     glUseProgram(g_shaderProgram);
@@ -189,8 +199,10 @@ int main(int argc, char** argv)
   g_height = CGDisplayPixelsHigh(displayId);
 #endif
 
-  sf::ContextSettings settings;
-  g_renderWindow.reset(new RenderWindow(sf::VideoMode(8 * g_width / 10, 8 * g_height / 10), "...", sf::Style::Default, settings));
+  g_width = (int)(0.8f * g_width);
+  g_height = (int)(0.8f * g_height);
+
+  g_renderWindow.reset(new RenderWindow(sf::VideoMode(g_width, g_height), "..."));
   g_renderWindow->setVerticalSyncEnabled(true);
 
   glViewport(0, 0, g_width, g_height);

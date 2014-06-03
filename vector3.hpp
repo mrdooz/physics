@@ -2,6 +2,7 @@
 
 namespace physics
 {
+  #pragma pack(push, 1)
   struct Vector3
   {
     Vector3() {}
@@ -12,6 +13,8 @@ namespace physics
     float& operator[](u32 idx) { return ((float*)&x)[idx]; }
     float operator[](u32 idx) const { return ((float*)&x)[idx]; }
   };
+
+  #pragma pack(pop)
 
   float Dot(const Vector3& lhs, const Vector3& rhs)
   {

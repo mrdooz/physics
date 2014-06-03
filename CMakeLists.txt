@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 2.6)
+
 project(physics)
 
 include(FindProtobuf)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
-set(SFML_STATIC_LIBRARIES TRUE)
+if (MSVC)
+  set(SFML_STATIC_LIBRARIES TRUE)
+endif()
 find_package(SFML 2 REQUIRED system window graphics)
 find_package(Boost REQUIRED)
 find_package(Protobuf REQUIRED)
@@ -26,6 +29,7 @@ add_executable(${PROJECT_NAME} ${SRC})
 if (APPLE)
   # change c++ standard library to libc++ (llvm)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -v -std=c++11 -stdlib=libc++")
+  find_library(APP_SERVICES ApplicationServices)
   set_target_properties(
     ${PROJECT_NAME}
     PROPERTIES
@@ -37,11 +41,13 @@ if (APPLE)
   # specifically link against a protobuf and boost build with libc++
   target_link_libraries(
     ${PROJECT_NAME}
-    ${SFML_LIBRARIES} 
+    ${SFML_LIBRARIES}
     ${OPENGL_LIBRARIES}
     ${GLEW_LIBRARIES}
     "/opt/local/boost/lib/libboost_date_time.a"
-    "/opt/local/protobuf/lib/libprotobuf.a")
+    "/opt/local/protobuf/lib/libprotobuf.a"
+    ${APP_SERVICES} )
+
 else()
   if (MSVC)
     # global all the root level .cpp files
